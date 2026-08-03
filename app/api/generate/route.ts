@@ -4,16 +4,29 @@ import { ListingInput } from '@/lib/prompts';
 
 export async function POST(request: Request) {
   try {
-    const body: ListingInput = await request.json();
+    const body: Partial<ListingInput> = await request.json();
 
-    if (!body.productName || !body.brand || !body.marketplace) {
+    if (!body.productName || body.productName.trim() === '') {
       return NextResponse.json(
-        { error: 'Missing required fields: productName, brand, and marketplace are required.' },
+        { error: 'Product Name or Title is required.' },
         { status: 400 }
       );
     }
 
-    const listing = await generateMarketplaceListing(body);
+    const sanitizedInput: ListingInput = {
+      productName: body.productName.trim(),
+      brand: body.brand && body.brand.trim() !== '' ? body.brand.trim() : 'Premium Brand',
+      marketplace: body.marketplace || 'etsy',
+      category: body.category || 'General',
+      targetCountry: body.targetCountry || 'US',
+      features: body.features && body.features.length > 0 ? body.features : ['High quality materials', 'Durable design', 'Everyday utility'],
+      keywords: body.keywords || [],
+      competitors: body.competitors || [],
+      currentListingUrl: body.currentListingUrl,
+      imageUrl: body.imageUrl,
+    };
+
+    const listing = await generateMarketplaceListing(sanitizedInput);
 
     return NextResponse.json({
       success: true,

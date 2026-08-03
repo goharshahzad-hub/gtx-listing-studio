@@ -13,6 +13,16 @@ export async function generateMarketplaceListing(
   const systemPrompt = buildSystemPrompt(input.marketplace);
   const userPrompt = buildUserPrompt(input);
 
+  const userContent: any[] = [{ type: 'text', text: userPrompt }];
+
+  const activeImage = input.imageFileBase64 || input.imageUrl;
+  if (activeImage) {
+    userContent.push({
+      type: 'image_url',
+      image_url: { url: activeImage },
+    });
+  }
+
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -23,7 +33,7 @@ export async function generateMarketplaceListing(
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
+        { role: 'user', content: userContent },
       ],
       response_format: { type: 'json_object' },
       temperature: 0.7,
@@ -42,10 +52,5 @@ export async function generateMarketplaceListing(
     throw new Error('Failed to retrieve content from AI completion response.');
   }
 
-  try {
-    const parsed: ListingOutput = JSON.parse(content);
-    return parsed;
-  } catch (err) {
-    throw new Error('Failed to parse AI output into JSON schema.');
-  }
+  return JSON.parse(content) as ListingOutput;
 }

@@ -9,6 +9,7 @@ export interface ListingInput {
   marketplace: 'amazon' | 'walmart' | 'etsy' | 'shopify' | 'ebay' | 'noon';
   currentListingUrl?: string;
   imageUrl?: string;
+  imageFileBase64?: string;
 }
 
 export interface ListingOutput {
@@ -16,7 +17,7 @@ export interface ListingOutput {
   bulletPoints: string[];
   description: string;
   backendKeywords: string[];
-  etsyTags?: string[]; // Exactly 13 long-tail tags for Etsy
+  etsyTags?: string[];
   seoScore: number;
   metaTitle: string;
   metaDescription: string;
@@ -25,17 +26,17 @@ export interface ListingOutput {
   faqs: { question: string; answer: string }[];
   seoResearchSummary?: string;
   competitorGaps?: string[];
+  visualInsights?: string;
 }
 
 export function buildSystemPrompt(marketplace: string): string {
   return `You are an elite E-Commerce Marketplace Copywriter and SEO Intelligence Specialist specializing in ${marketplace.toUpperCase()}.
-Your task is to take raw product details, an optional current listing URL, and product image context to generate a high-converting, policy-compliant, and deeply SEO-optimized product listing.
+Your task is to take product names, optional features, existing listing URLs, and visual product images (JPG/PNG uploads) to generate a high-converting, policy-compliant, and deeply SEO-optimized product listing.
 
 Requirements per Marketplace:
 - ETSY: 
-  * MUST generate exactly 13 long-tail search tags in the "etsyTags" field. Each tag MUST be under 20 characters, multi-word long-tail phrases, matching real Etsy shopper search behavior.
+  * MUST generate exactly 13 long-tail search tags in the "etsyTags" field. Each tag MUST be under 20 characters, multi-word phrases.
   * Creative, keyword-rich title (max 140 chars) focusing on shopper intent, materials, and gift occasions.
-  * Engaging, story-driven description with primary keywords in the first 2 sentences.
 - AMAZON: Title under 200 chars, 5 benefit-driven bullet points, plain text description, backend search terms.
 - WALMART: Brand + Product Name + Key Attribute title, 3-5 bullet points, rich description.
 - SHOPIFY: SEO meta title, meta description, clean HTML-formatted description.
@@ -58,27 +59,25 @@ You MUST return ONLY a valid JSON object matching this exact schema:
   "faqs": [
     { "question": "string", "answer": "string" }
   ],
-  "seoResearchSummary": "string (brief summary of high-volume search intent & keyword strategy)",
-  "competitorGaps": ["string (opportunities found to outrank competing listings)"]
+  "seoResearchSummary": "string",
+  "visualInsights": "string (details extracted from the uploaded image if provided)"
 }`;
 }
 
 export function buildUserPrompt(input: ListingInput): string {
-  return `Generate a complete, high-converting ${input.marketplace.toUpperCase()} product listing:
+  return `Generate a complete ${input.marketplace.toUpperCase()} product listing:
 
 Brand: ${input.brand}
 Product Name: ${input.productName}
 Category: ${input.category || 'General'}
 Target Country: ${input.targetCountry}
-Key Features & Benefits:
-${input.features.map(f => `- ${f}`).join('\n')}
+${input.features && input.features.length > 0 ? `Key Features:\n${input.features.map(f => `- ${f}`).join('\n')}` : 'Key Features: Auto-infer from product title & image context.'}
 
 Target Keywords: ${input.keywords.join(', ')}
-${input.competitors && input.competitors.length > 0 ? `Competitors to Outrank: ${input.competitors.join(', ')}` : ''}
-${input.currentListingUrl ? `Current Listing URL to Rewrite & Audit: ${input.currentListingUrl}` : ''}
-${input.imageUrl ? `Product Image Context URL: ${input.imageUrl}` : ''}
+${input.competitors && input.competitors.length > 0 ? `Competitors: ${input.competitors.join(', ')}` : ''}
+${input.currentListingUrl ? `Current Listing URL to Rewrite: ${input.currentListingUrl}` : ''}
 
-${input.marketplace.toLowerCase() === 'etsy' ? 'CRITICAL ETSY RULE: Populate the "etsyTags" array with EXACTLY 13 unique, multi-word search tags under 20 characters each.' : ''}
+${input.marketplace.toLowerCase() === 'etsy' ? 'CRITICAL ETSY RULE: Populate "etsyTags" with EXACTLY 13 unique tags under 20 chars each.' : ''}
 
-Generate the JSON response following the strict schema provided.`;
+Generate the JSON response matching the required schema.`;
 }
