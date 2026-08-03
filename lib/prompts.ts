@@ -7,6 +7,8 @@ export interface ListingInput {
   keywords: string[];
   competitors?: string[];
   marketplace: 'amazon' | 'walmart' | 'etsy' | 'shopify' | 'ebay' | 'noon';
+  currentListingUrl?: string;
+  imageUrl?: string;
 }
 
 export interface ListingOutput {
@@ -14,25 +16,31 @@ export interface ListingOutput {
   bulletPoints: string[];
   description: string;
   backendKeywords: string[];
+  etsyTags?: string[]; // Exactly 13 long-tail tags for Etsy
   seoScore: number;
   metaTitle: string;
   metaDescription: string;
   imageSuggestions: string[];
   altText: string[];
   faqs: { question: string; answer: string }[];
+  seoResearchSummary?: string;
+  competitorGaps?: string[];
 }
 
 export function buildSystemPrompt(marketplace: string): string {
-  return `You are an expert E-Commerce Marketplace Copywriter and SEO Specialist specializing in ${marketplace.toUpperCase()}.
-Your task is to take raw product details and generate a high-converting, policy-compliant, and SEO-optimized product listing.
+  return `You are an elite E-Commerce Marketplace Copywriter and SEO Intelligence Specialist specializing in ${marketplace.toUpperCase()}.
+Your task is to take raw product details, an optional current listing URL, and product image context to generate a high-converting, policy-compliant, and deeply SEO-optimized product listing.
 
-Requirements for ${marketplace.toUpperCase()}:
-- Amazon: Title under 200 chars, 5 bullet points focused on benefits, HTML-free description, search terms in backend keywords.
-- Walmart: Clear product title (Brand + Product + Key Attribute), 3-5 concise bullet points, detailed rich description, key features highlighted.
-- Etsy: Creative title with long-tail keywords, story-driven description, tag suggestions, tag-oriented backend keywords.
-- Shopify: Catchy title, clean HTML-formatted description, engaging bullets, optimized meta title and meta description.
-- eBay: Direct item title (80 char limit target for mobile), item specifics friendly, structured bullet points.
-- Noon: Clear title, benefit-oriented bullet points, standard Arabic/English friendly description guidelines.
+Requirements per Marketplace:
+- ETSY: 
+  * MUST generate exactly 13 long-tail search tags in the "etsyTags" field. Each tag MUST be under 20 characters, multi-word long-tail phrases, matching real Etsy shopper search behavior.
+  * Creative, keyword-rich title (max 140 chars) focusing on shopper intent, materials, and gift occasions.
+  * Engaging, story-driven description with primary keywords in the first 2 sentences.
+- AMAZON: Title under 200 chars, 5 benefit-driven bullet points, plain text description, backend search terms.
+- WALMART: Brand + Product Name + Key Attribute title, 3-5 bullet points, rich description.
+- SHOPIFY: SEO meta title, meta description, clean HTML-formatted description.
+- EBAY: Mobile-optimized 80-char title, item specifics, bullet points.
+- NOON: Clear title, benefit bullets, Middle East e-commerce friendly description.
 
 OUTPUT REQUIREMENT:
 You MUST return ONLY a valid JSON object matching this exact schema:
@@ -41,19 +49,22 @@ You MUST return ONLY a valid JSON object matching this exact schema:
   "bulletPoints": ["string"],
   "description": "string",
   "backendKeywords": ["string"],
-  "seoScore": number (0-100 rating based on keyword coverage and clarity),
+  "etsyTags": ["string"], // Exactly 13 tags for Etsy (array of 13 strings, each < 20 chars)
+  "seoScore": number (0-100),
   "metaTitle": "string",
   "metaDescription": "string",
   "imageSuggestions": ["string"],
   "altText": ["string"],
   "faqs": [
     { "question": "string", "answer": "string" }
-  ]
+  ],
+  "seoResearchSummary": "string (brief summary of high-volume search intent & keyword strategy)",
+  "competitorGaps": ["string (opportunities found to outrank competing listings)"]
 }`;
 }
 
 export function buildUserPrompt(input: ListingInput): string {
-  return `Generate a complete ${input.marketplace.toUpperCase()} product listing for the following product:
+  return `Generate a complete, high-converting ${input.marketplace.toUpperCase()} product listing:
 
 Brand: ${input.brand}
 Product Name: ${input.productName}
@@ -64,6 +75,10 @@ ${input.features.map(f => `- ${f}`).join('\n')}
 
 Target Keywords: ${input.keywords.join(', ')}
 ${input.competitors && input.competitors.length > 0 ? `Competitors to Outrank: ${input.competitors.join(', ')}` : ''}
+${input.currentListingUrl ? `Current Listing URL to Rewrite & Audit: ${input.currentListingUrl}` : ''}
+${input.imageUrl ? `Product Image Context URL: ${input.imageUrl}` : ''}
+
+${input.marketplace.toLowerCase() === 'etsy' ? 'CRITICAL ETSY RULE: Populate the "etsyTags" array with EXACTLY 13 unique, multi-word search tags under 20 characters each.' : ''}
 
 Generate the JSON response following the strict schema provided.`;
 }
