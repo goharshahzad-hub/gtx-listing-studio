@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { generateMarketplaceListing } from '../../../lib/generator';
-import { ListingInput } from '../../../lib/prompts';
+import { generateMarketplaceListing } from '@/lib/generator';
+import { ListingInput } from '@/lib/prompts';
 
 export async function POST(request: Request) {
   try {
@@ -19,9 +19,10 @@ export async function POST(request: Request) {
       success: true,
       data: listing,
     });
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An error occurred during listing generation.';
     return NextResponse.json(
-      { error: error.message || 'An error occurred during listing generation.' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

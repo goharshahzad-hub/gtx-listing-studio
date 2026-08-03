@@ -8,7 +8,7 @@ export default function ListingStudioDashboard() {
   const [productName, setProductName] = useState('Collapsible Silicone Water Bottle');
   const [category, setCategory] = useState('Sports & Outdoors');
   const [targetCountry, setTargetCountry] = useState('US');
-  const [features, setFeatures] = useState('BPA free food-grade silicone, Collapsible ball shape, Leakproof twist cap, 500ml capacity, Lightweight for hiking & gym');
+  const [features, setFeatures] = useState('BPA free food-grade silicone, Collapsible ball shape, Leakproof twist cap, 500ml capacity');
   const [keywords, setKeywords] = useState('sports water bottle, collapsible bottle, gym bottle, travel water bottle');
   const [competitors, setCompetitors] = useState('HydraPak, Nalgene');
 
@@ -43,8 +43,9 @@ export default function ListingStudioDashboard() {
         throw new Error(resData.error || 'Generation failed');
       }
       setOutput(resData.data);
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An error occurred';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -63,7 +64,6 @@ export default function ListingStudioDashboard() {
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '2rem' }}>
-        {/* Input Form */}
         <div style={{ background: '#f9fafb', padding: '1.75rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb' }}>
           <h2 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '1.25rem', color: '#111827' }}>Product Information</h2>
           <form onSubmit={handleGenerate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -167,7 +167,6 @@ export default function ListingStudioDashboard() {
           </form>
         </div>
 
-        {/* Output Panel */}
         <div style={{ background: '#ffffff', padding: '1.75rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <h2 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '1.25rem', color: '#111827' }}>Optimized Output</h2>
 
